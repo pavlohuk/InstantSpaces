@@ -24,9 +24,6 @@
 "menu.indicator" = "Space Indicator";
 "menu.indicator.show" = "Show When Switching";
 "menu.indicator.position" = "Position: %@";
-"menu.test" = "Test Switch";
-"menu.test.next" = "Next Space →";
-"menu.test.previous" = "← Previous Space";
 "menu.launchAtLogin" = "Launch at Login";
 "menu.quit" = "Quit";
 

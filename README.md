@@ -88,7 +88,6 @@ After every Space change, an overlay appears for about a second at the top centr
 - **Hotkeys.** Toggles for digits and arrows, and the modifier choice.
 - **Go to App (⌘Tab, Dock).** Toggles following the activated app.
 - **Space Indicator.** On/off and the position on screen.
-- **Test Switch.** Switches to the neighbouring Space without a gesture.
 - **Launch at Login.** Uses `SMAppService`.
 
 Settings are stored in the `com.pavlohuk.InstantSpaces` defaults domain.

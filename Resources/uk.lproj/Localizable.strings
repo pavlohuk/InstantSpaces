@@ -24,9 +24,6 @@
 "menu.indicator" = "Індикатор столу";
 "menu.indicator.show" = "Показувати при перемиканні";
 "menu.indicator.position" = "Положення: %@";
-"menu.test" = "Тест перемикання";
-"menu.test.next" = "Наступний стіл →";
-"menu.test.previous" = "← Попередній стіл";
 "menu.launchAtLogin" = "Запускати при вході";
 "menu.quit" = "Вийти";
 

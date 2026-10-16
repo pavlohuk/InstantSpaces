@@ -34,7 +34,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let statusBar = StatusBarController()
         statusBar.onSettingsChanged = { is_ds_set_intercept(Settings.shared.enabled) }
-        statusBar.onTestSwitch = { [weak self] step in self?.switcher.perform(step) }
         statusBar.isAccessibilityGranted = { AXIsProcessTrusted() }
         statusBar.isInterceptActive = { is_ds_tap_installed() }
         self.statusBar = statusBar

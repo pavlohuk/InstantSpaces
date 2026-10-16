@@ -7,7 +7,6 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     private let settings = Settings.shared
 
     var onSettingsChanged: (() -> Void)?
-    var onTestSwitch: ((SpaceStep) -> Void)?
     var isAccessibilityGranted: (() -> Bool)?
     var isInterceptActive: (() -> Bool)?
 
@@ -101,13 +100,6 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         menu.addItem(cornerItem)
         menu.addItem(.separator())
 
-        let test = NSMenuItem(title: L("menu.test"), action: nil, keyEquivalent: "")
-        let testMenu = NSMenu()
-        testMenu.addItem(action(L("menu.test.next"), #selector(testNext)))
-        testMenu.addItem(action(L("menu.test.previous"), #selector(testPrevious)))
-        test.submenu = testMenu
-        menu.addItem(test)
-
         menu.addItem(check(L("menu.launchAtLogin"), on: LoginItem.isEnabled, #selector(toggleLoginItem)))
         menu.addItem(.separator())
         menu.addItem(action(L("menu.quit"), #selector(quit), key: "q"))
@@ -170,8 +162,6 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         _ = AXIsProcessTrustedWithOptions(options)
         SystemGestureCheck.openAccessibilitySettings()
     }
-    @objc private func testNext() { onTestSwitch?(.next) }
-    @objc private func testPrevious() { onTestSwitch?(.previous) }
 
     @objc private func toggleLoginItem() {
         do {
