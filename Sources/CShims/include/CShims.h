@@ -10,10 +10,13 @@ extern "C" {
 
 // ---- Spaces (SkyLight, read-only) ----
 
+enum { IS_MAX_SPACES = 64 };
+
 typedef struct {
     uint32_t index;     // zero-based index of the current space on the display under the cursor
     uint32_t count;     // spaces on that display (desktops and full-screen apps), in Dock order
     char display[128];  // display UUID
+    int32_t types[IS_MAX_SPACES];  // per space: 0 = desktop, 4 = full-screen app, other = system
 } ISSpaceInfo;
 
 bool is_spaces_available(void);
@@ -37,6 +40,11 @@ bool is_ds_tap_installed(void);
 /// When false, native swipes pass through untouched (normal animated switching).
 void is_ds_set_intercept(bool enabled);
 void is_ds_set_swipe_handler(ISSwipeHandler handler);
+
+/// Called from the event tap for every key-down. Return true to swallow the key (its key-up is
+/// swallowed too). `flags` are CGEventFlags; `is_repeat` is set for auto-repeat key-downs.
+typedef bool (*ISKeyHandler)(int32_t keycode, uint64_t flags, bool is_repeat);
+void is_ds_set_key_handler(ISKeyHandler handler);
 
 #ifdef __cplusplus
 }

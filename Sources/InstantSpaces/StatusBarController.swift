@@ -58,7 +58,23 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         menu.addItem(.separator())
 
         menu.addItem(check("Увімкнено", on: settings.enabled, #selector(toggleEnabled)))
-        menu.addItem(check("Інвертувати напрямок", on: settings.invertDirection, #selector(toggleInvert)))
+        menu.addItem(check("Інвертувати напрямок свайпу", on: settings.invertDirection, #selector(toggleInvert)))
+        menu.addItem(.separator())
+
+        let m = settings.hotkeyModifier.symbol
+        menu.addItem(header("Гарячі клавіші"))
+        menu.addItem(check("\(m)1 … \(m)9 — перейти на стіл N", on: settings.hotkeyDigits, #selector(toggleDigits), indent: 1))
+        menu.addItem(check("\(m)← / \(m)→ — сусідній стіл", on: settings.hotkeyArrows, #selector(toggleArrows), indent: 1))
+        let modifierItem = NSMenuItem(title: "Модифікатор: \(settings.hotkeyModifier.title)", action: nil, keyEquivalent: "")
+        modifierItem.indentationLevel = 1
+        let modifierMenu = NSMenu()
+        for modifier in HotkeyModifier.allCases {
+            let mi = check(modifier.title, on: modifier == settings.hotkeyModifier, #selector(setModifier(_:)))
+            mi.representedObject = modifier.rawValue
+            modifierMenu.addItem(mi)
+        }
+        modifierItem.submenu = modifierMenu
+        menu.addItem(modifierItem)
         menu.addItem(.separator())
 
         let test = NSMenuItem(title: "Тест перемикання", action: nil, keyEquivalent: "")
@@ -88,8 +104,8 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         return mi
     }
 
-    private func check(_ title: String, on: Bool, _ selector: Selector) -> NSMenuItem {
-        let mi = action(title, selector)
+    private func check(_ title: String, on: Bool, _ selector: Selector, indent: Int = 0) -> NSMenuItem {
+        let mi = action(title, selector, indent: indent)
         mi.state = on ? .on : .off
         return mi
     }
@@ -103,6 +119,15 @@ final class StatusBarController: NSObject, NSMenuDelegate {
 
     @objc private func toggleEnabled() { settings.enabled.toggle(); changed() }
     @objc private func toggleInvert() { settings.invertDirection.toggle(); changed() }
+    @objc private func toggleDigits() { settings.hotkeyDigits.toggle(); changed() }
+    @objc private func toggleArrows() { settings.hotkeyArrows.toggle(); changed() }
+
+    @objc private func setModifier(_ sender: NSMenuItem) {
+        if let raw = sender.representedObject as? String, let modifier = HotkeyModifier(rawValue: raw) {
+            settings.hotkeyModifier = modifier
+            changed()
+        }
+    }
     @objc private func openTrackpadSettings() { SystemGestureCheck.openTrackpadSettings() }
     @objc private func openAccessibility() {
         // Re-asking puts InstantSpaces back into the Accessibility list if its entry was removed.

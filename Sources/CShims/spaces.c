@@ -89,12 +89,17 @@ bool is_spaces_info(ISSpaceInfo *out) {
         CFStringGetCString(ident, out->display, sizeof(out->display), kCFStringEncodingUTF8);
         uint64_t cur = S.get_current(S.conn, ident);
         CFIndex n = CFArrayGetCount(spaces);
+        if (n > IS_MAX_SPACES) n = IS_MAX_SPACES;
         bool found = false;
         for (CFIndex i = 0; i < n; i++) {
             CFDictionaryRef s = CFArrayGetValueAtIndex(spaces, i);
             CFNumberRef idn = CFDictionaryGetValue(s, CFSTR("id64"));
+            CFNumberRef tn = CFDictionaryGetValue(s, CFSTR("type"));
             uint64_t id = 0;
+            int32_t type = 0;
             if (idn) CFNumberGetValue(idn, kCFNumberSInt64Type, &id);
+            if (tn) CFNumberGetValue(tn, kCFNumberSInt32Type, &type);
+            out->types[i] = type;
             if (id == cur && !found) { out->index = (uint32_t)i; found = true; }
         }
         out->count = (uint32_t)n;

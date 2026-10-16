@@ -23,6 +23,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         is_ds_set_swipe_handler { direction in
             AppDelegate.current?.handleNativeSwipe(direction: Int(direction))
         }
+        is_ds_set_key_handler { keycode, flags, isRepeat in
+            AppDelegate.current?.handleKey(keycode: keycode, flags: flags, isRepeat: isRepeat) ?? false
+        }
         is_ds_set_intercept(Settings.shared.enabled)
 
         let statusBar = StatusBarController()
@@ -70,6 +73,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         var step: SpaceStep = direction > 0 ? .next : .previous
         if Settings.shared.invertDirection { step = step == .next ? .previous : .next }
         switcher.perform(step)
+    }
+
+    /// modifier+←/→ and modifier+1…9. Returns true when the key was ours and must be swallowed.
+    private func handleKey(keycode: Int32, flags: UInt64, isRepeat: Bool) -> Bool {
+        let settings = Settings.shared
+        guard settings.enabled, Hotkeys.modifiersMatch(flags, settings.hotkeyModifier) else { return false }
+
+        if settings.hotkeyArrows, keycode == Hotkeys.leftArrow || keycode == Hotkeys.rightArrow {
+            // Auto-repeat would fire a burst of switches; swallow it without acting.
+            if !isRepeat { switcher.perform(keycode == Hotkeys.rightArrow ? .next : .previous) }
+            return true
+        }
+
+        if settings.hotkeyDigits, let number = Hotkeys.digits[keycode] {
+            // No such desktop: let the key through so the app's own shortcut still works.
+            if isRepeat { return switcher.hasDesktop(number) }
+            return switcher.jump(toDesktop: number)
+        }
+        return false
     }
 
     // MARK: Misc

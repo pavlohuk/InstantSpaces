@@ -199,6 +199,8 @@ static CFMachPortRef g_tap = NULL;
 static CFRunLoopSourceRef g_tap_source = NULL;
 static bool g_intercept = true;
 static ISSwipeHandler g_handler = NULL;
+static ISKeyHandler g_key_handler = NULL;
+static uint8_t g_swallowed_keys[128];  // key-downs we swallowed, so their key-ups are swallowed too
 static bool g_tracking = false;
 static bool g_fired = false;
 static unsigned g_own_events_pending = 0;
@@ -271,6 +273,22 @@ static CGEventRef tap_callback(CGEventTapProxy proxy, CGEventType type, CGEventR
         return event;
     }
 
+    if (type == kCGEventKeyDown || type == kCGEventKeyUp) {
+        int64_t keycode = CGEventGetIntegerValueField(event, kCGKeyboardEventKeycode);
+        if (keycode < 0 || keycode >= 128) return event;
+        if (type == kCGEventKeyUp) {
+            if (!g_swallowed_keys[keycode]) return event;
+            g_swallowed_keys[keycode] = 0;
+            return NULL;
+        }
+        bool is_repeat = CGEventGetIntegerValueField(event, kCGKeyboardEventAutorepeat) != 0;
+        if (g_key_handler && g_key_handler((int32_t)keycode, (uint64_t)CGEventGetFlags(event), is_repeat)) {
+            g_swallowed_keys[keycode] = 1;
+            return NULL;
+        }
+        return event;
+    }
+
     int64_t event_type = CGEventGetIntegerValueField(event, kFieldEventType);
     if (event_type != kEventDockControl && event_type != kEventGesture) return event;
 
@@ -328,7 +346,8 @@ static CGEventRef tap_callback(CGEventTapProxy proxy, CGEventType type, CGEventR
 
 bool is_ds_tap_install(void) {
     if (g_tap) return true;
-    CGEventMask mask = (1ULL << kEventGesture) | (1ULL << kEventDockControl);
+    CGEventMask mask = (1ULL << kEventGesture) | (1ULL << kEventDockControl)
+        | CGEventMaskBit(kCGEventKeyDown) | CGEventMaskBit(kCGEventKeyUp);
     g_tap = CGEventTapCreate(kCGSessionEventTap, kCGHeadInsertEventTap, kCGEventTapOptionDefault, mask, tap_callback, NULL);
     if (!g_tap) return false;
     g_tap_source = CFMachPortCreateRunLoopSource(NULL, g_tap, 0);
@@ -346,3 +365,4 @@ bool is_ds_tap_install(void) {
 bool is_ds_tap_installed(void) { return g_tap != NULL; }
 void is_ds_set_intercept(bool enabled) { g_intercept = enabled; if (!enabled) { g_tracking = false; g_fired = false; } }
 void is_ds_set_swipe_handler(ISSwipeHandler handler) { g_handler = handler; }
+void is_ds_set_key_handler(ISKeyHandler handler) { g_key_handler = handler; }
