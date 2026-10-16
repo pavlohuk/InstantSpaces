@@ -11,6 +11,7 @@ typedef int (*f_cid)(void);
 typedef CFArrayRef (*f_copyspaces)(int);
 typedef uint64_t (*f_getcur)(int, CFStringRef);
 typedef CFStringRef (*f_activedisp)(int);
+typedef CFArrayRef (*f_spaces_for_windows)(int, int, CFArrayRef);
 
 static struct {
     int tried;
@@ -19,6 +20,7 @@ static struct {
     f_copyspaces copy_spaces;
     f_getcur get_current;
     f_activedisp active_display;
+    f_spaces_for_windows spaces_for_windows;
 } S;
 
 static bool load_sl(void) {
@@ -30,6 +32,7 @@ static bool load_sl(void) {
     S.copy_spaces    = (f_copyspaces)dlsym(h, "SLSCopyManagedDisplaySpaces");
     S.get_current    = (f_getcur)dlsym(h, "SLSManagedDisplayGetCurrentSpace");
     S.active_display = (f_activedisp)dlsym(h, "SLSCopyActiveMenuBarDisplayIdentifier");
+    S.spaces_for_windows = (f_spaces_for_windows)dlsym(h, "SLSCopySpacesForWindows");
     if (!cid || !S.copy_spaces || !S.get_current) { dlclose(h); return false; }
     S.conn = cid();
     S.handle = h;
@@ -110,4 +113,74 @@ bool is_spaces_info(ISSpaceInfo *out) {
     }
     CFRelease(displays);
     return ok;
+}
+
+int32_t is_spaces_app_window_indexes(int32_t pid, int32_t *out_indexes, int32_t max) {
+    if (!out_indexes || max <= 0 || pid <= 0 || !load_sl() || !S.spaces_for_windows) return 0;
+
+    // Space ids of the display under the cursor, in Dock order.
+    uint64_t ids[IS_MAX_SPACES];
+    CFIndex nspaces = 0;
+    CFArrayRef displays = S.copy_spaces(S.conn);
+    if (!displays) return 0;
+    CFDictionaryRef display = find_display(displays);
+    CFArrayRef spaces = display ? CFDictionaryGetValue(display, CFSTR("Spaces")) : NULL;
+    if (spaces && CFGetTypeID(spaces) == CFArrayGetTypeID()) {
+        nspaces = CFArrayGetCount(spaces);
+        if (nspaces > IS_MAX_SPACES) nspaces = IS_MAX_SPACES;
+        for (CFIndex i = 0; i < nspaces; i++) {
+            CFNumberRef idn = CFDictionaryGetValue(CFArrayGetValueAtIndex(spaces, i), CFSTR("id64"));
+            ids[i] = 0;
+            if (idn) CFNumberGetValue(idn, kCFNumberSInt64Type, &ids[i]);
+        }
+    }
+    CFRelease(displays);
+    if (nspaces == 0) return 0;
+
+    // All windows, front to back, including those on other spaces.
+    CFArrayRef windows = CGWindowListCopyWindowInfo(kCGWindowListOptionAll | kCGWindowListExcludeDesktopElements, kCGNullWindowID);
+    if (!windows) return 0;
+    int32_t written = 0;
+    CFIndex count = CFArrayGetCount(windows);
+    for (CFIndex i = 0; i < count && written < max; i++) {
+        CFDictionaryRef w = CFArrayGetValueAtIndex(windows, i);
+        int32_t owner = 0, layer = -1, wid = 0;
+        CFNumberRef on = CFDictionaryGetValue(w, CFSTR("kCGWindowOwnerPID"));
+        CFNumberRef ln = CFDictionaryGetValue(w, CFSTR("kCGWindowLayer"));
+        CFNumberRef wn = CFDictionaryGetValue(w, CFSTR("kCGWindowNumber"));
+        if (!on || !ln || !wn) continue;
+        CFNumberGetValue(on, kCFNumberSInt32Type, &owner);
+        CFNumberGetValue(ln, kCFNumberSInt32Type, &layer);
+        CFNumberGetValue(wn, kCFNumberSInt32Type, &wid);
+        if (owner != pid || layer != 0) continue;
+
+        // Skip helper and placeholder windows that are not real documents.
+        CGRect bounds = CGRectZero;
+        CFDictionaryRef bd = CFDictionaryGetValue(w, CFSTR("kCGWindowBounds"));
+        if (!bd || !CGRectMakeWithDictionaryRepresentation(bd, &bounds)) continue;
+        if (bounds.size.width < 50 || bounds.size.height < 50) continue;
+        double alpha = 1;
+        CFNumberRef an = CFDictionaryGetValue(w, CFSTR("kCGWindowAlpha"));
+        if (an) CFNumberGetValue(an, kCFNumberDoubleType, &alpha);
+        if (alpha <= 0) continue;
+
+        CFArrayRef one = CFArrayCreate(NULL, (const void **)&wn, 1, &kCFTypeArrayCallBacks);
+        CFArrayRef ws = S.spaces_for_windows(S.conn, 0x7, one);
+        CFRelease(one);
+        if (!ws) continue;
+        for (CFIndex j = 0; j < CFArrayGetCount(ws) && written < max; j++) {
+            uint64_t sid = 0;
+            CFNumberGetValue(CFArrayGetValueAtIndex(ws, j), kCFNumberSInt64Type, &sid);
+            for (CFIndex k = 0; k < nspaces; k++) {
+                if (ids[k] != sid) continue;
+                bool seen = false;
+                for (int32_t m = 0; m < written; m++) if (out_indexes[m] == (int32_t)k) { seen = true; break; }
+                if (!seen) out_indexes[written++] = (int32_t)k;
+                break;
+            }
+        }
+        CFRelease(ws);
+    }
+    CFRelease(windows);
+    return written;
 }

@@ -45,9 +45,38 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSWorkspace.shared.notificationCenter.addObserver(
             self, selector: #selector(activeSpaceDidChange),
             name: NSWorkspace.activeSpaceDidChangeNotification, object: nil)
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self, selector: #selector(appDidActivate(_:)),
+            name: NSWorkspace.didActivateApplicationNotification, object: nil)
 
         installSignalHandlers()
         startInterception()
+    }
+
+    // MARK: Follow the activated app
+
+    /// ⌘Tab, a Dock click or anything else activated an app. If none of its windows is on the
+    /// current space, jump instantly to the space with its most recent window, which is what the
+    /// system's own (animated) "switch to a Space with open windows" option would do.
+    @objc private func appDidActivate(_ notification: Notification) {
+        let settings = Settings.shared
+        guard settings.enabled, settings.followActivatedApp, is_ds_tap_installed(),
+              let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication,
+              app.processIdentifier != ProcessInfo.processInfo.processIdentifier
+        else { return }
+        // With the system option on, the Dock is already sliding there; a second switch would collide.
+        guard !SystemGestureCheck.systemSwitchOnActivateEnabled() else { return }
+        guard let state = switcher.snapshot() else { return }
+
+        var buffer = [Int32](repeating: 0, count: 64)
+        let found = Int(is_spaces_app_window_indexes(app.processIdentifier, &buffer, Int32(buffer.count)))
+        let indexes = buffer.prefix(found).map(Int.init)
+        // No windows on this display, or already visible here (includes the app that macOS
+        // activates on its own after one of our switches lands).
+        guard let target = indexes.first, !indexes.contains(state.current) else { return }
+
+        let name = app.localizedName ?? "pid \(app.processIdentifier)"
+        switcher.jump(toSpaceIndex: target, reason: "app \(name)")
     }
 
     // MARK: Indicator

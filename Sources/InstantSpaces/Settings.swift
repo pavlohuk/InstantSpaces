@@ -48,6 +48,7 @@ final class Settings {
         static let hotkeyModifier = "hotkeyModifier"
         static let indicatorEnabled = "indicatorEnabled"
         static let indicatorCorner = "indicatorCorner"
+        static let followActivatedApp = "followActivatedApp"
     }
 
     private let defaults = UserDefaults.standard
@@ -61,6 +62,7 @@ final class Settings {
             Key.hotkeyModifier: HotkeyModifier.command.rawValue,
             Key.indicatorEnabled: true,
             Key.indicatorCorner: IndicatorCorner.topCenter.rawValue,
+            Key.followActivatedApp: true,
         ])
     }
 
@@ -98,6 +100,14 @@ final class Settings {
     var indicatorEnabled: Bool {
         get { defaults.bool(forKey: Key.indicatorEnabled) }
         set { defaults.set(newValue, forKey: Key.indicatorEnabled) }
+    }
+
+    /// When an app is activated (⌘Tab, Dock click…) and none of its windows is on the current
+    /// space, jump instantly to the space with its most recent window. Only acts while the
+    /// system's own animated "switch to a Space with open windows" option is off.
+    var followActivatedApp: Bool {
+        get { defaults.bool(forKey: Key.followActivatedApp) }
+        set { defaults.set(newValue, forKey: Key.followActivatedApp) }
     }
 
     var indicatorCorner: IndicatorCorner {

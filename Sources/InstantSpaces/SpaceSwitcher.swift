@@ -89,6 +89,14 @@ final class SpaceSwitcher {
         return move(state, to: target, reason: "desktop \(number)")
     }
 
+    /// Jumps straight to the space at `index` (0-based, Dock order, full-screen spaces included).
+    @discardableResult
+    func jump(toSpaceIndex index: Int, reason: String) -> Bool {
+        guard let state = snapshot(), index >= 0, index < state.count else { return false }
+        if index == state.current { return true }
+        return move(state, to: index, reason: reason)
+    }
+
     /// Spaces of the display under the cursor. Right after our own switch, `current` is the
     /// predicted target rather than the intermediate space SkyLight may still report, unless
     /// `usePrediction` is false.

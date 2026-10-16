@@ -77,6 +77,16 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         menu.addItem(modifierItem)
         menu.addItem(.separator())
 
+        menu.addItem(header("Перехід до програми (⌘Tab, Dock)"))
+        menu.addItem(check("Миттєво на стіл з її вікном", on: settings.followActivatedApp, #selector(toggleFollowApp), indent: 1))
+        if settings.followActivatedApp && SystemGestureCheck.systemSwitchOnActivateEnabled() {
+            menu.addItem(header("⚠️ Діє системний перехід з анімацією"))
+            menu.addItem(header("Вимкніть «При перемиканні на програму переходити"))
+            menu.addItem(header("на простір з її відкритими вікнами»"))
+            menu.addItem(action("Відкрити «Робочий стіл і Dock»…", #selector(openDesktopSettings), indent: 1))
+        }
+        menu.addItem(.separator())
+
         menu.addItem(header("Індикатор столу"))
         menu.addItem(check("Показувати при перемиканні", on: settings.indicatorEnabled, #selector(toggleIndicator), indent: 1))
         let cornerItem = NSMenuItem(title: "Положення: \(settings.indicatorCorner.title)", action: nil, keyEquivalent: "")
@@ -137,6 +147,8 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     @objc private func toggleArrows() { settings.hotkeyArrows.toggle(); changed() }
 
     @objc private func toggleIndicator() { settings.indicatorEnabled.toggle(); changed() }
+    @objc private func toggleFollowApp() { settings.followActivatedApp.toggle(); changed() }
+    @objc private func openDesktopSettings() { SystemGestureCheck.openDesktopAndDockSettings() }
 
     @objc private func setCorner(_ sender: NSMenuItem) {
         if let raw = sender.representedObject as? String, let corner = IndicatorCorner(rawValue: raw) {

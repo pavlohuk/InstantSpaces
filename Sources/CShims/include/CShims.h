@@ -24,6 +24,10 @@ bool is_spaces_available(void);
 /// Fills `out` for the display under the mouse cursor. Returns false on failure.
 bool is_spaces_info(ISSpaceInfo *out);
 
+/// Indexes (into the cursor display's space list) of the spaces holding normal windows of app
+/// `pid`, most recently used window first, without duplicates. Returns how many were written.
+int32_t is_spaces_app_window_indexes(int32_t pid, int32_t *out_indexes, int32_t max);
+
 // ---- Dock swipe (synthetic gesture + interception of the native one) ----
 
 /// Called from the event tap (main run loop) when a native horizontal Dock swipe starts.
