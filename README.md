@@ -126,3 +126,7 @@ Common problems:
 - Undocumented event fields and private APIs are used, so a macOS update may break the app.
 - At the first or last Space, a swipe past the edge is ignored, with no rubber-band bounce. The app deliberately never posts a switch beyond the last Space, because on macOS 27 that can wedge the Dock.
 - The build is signed ad hoc, but the designated requirement is pinned to the bundle identifier `com.pavlohuk.InstantSpaces` rather than to the build's hash. That is why the Accessibility permission survives rebuilds. The trade-off is that any app signed the same way with the same identifier would inherit the permission, so do not reuse that identifier for anything else.
+
+## License
+
+InstantSpaces is released under the [MIT License](LICENSE). The synthetic swipe code adapted from [InstantSpaceSwitcher](https://github.com/jurplel/InstantSpaceSwitcher) keeps its own MIT notice in `THIRD_PARTY_LICENSE-InstantSpaceSwitcher.txt` and in the header of `Sources/CShims/dockswipe.c`.
