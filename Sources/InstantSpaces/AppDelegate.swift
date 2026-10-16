@@ -20,7 +20,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         AppDelegate.current = self
 
         guard is_spaces_available() else {
-            fail("Приватний API SkyLight для читання Spaces недоступний на цій версії macOS.")
+            fail(L("alert.fatal.skylight"))
             return
         }
 
@@ -196,7 +196,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func fail(_ message: String) {
         log.error("\(message, privacy: .public)")
         let alert = NSAlert()
-        alert.messageText = "InstantSpaces не може працювати"
+        alert.messageText = L("alert.fatal.title")
         alert.informativeText = message
         alert.runModal()
         NSApp.terminate(nil)

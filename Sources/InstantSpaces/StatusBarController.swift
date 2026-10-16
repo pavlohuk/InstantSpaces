@@ -27,7 +27,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
             ?? NSImage(systemSymbolName: "arrow.left.arrow.right", accessibilityDescription: "InstantSpaces")
         image?.isTemplate = true
         button.image = image
-        button.toolTip = ready ? "InstantSpaces — працює" : "InstantSpaces — не активний"
+        button.toolTip = ready ? L("status.tooltip.active") : L("status.tooltip.inactive")
     }
 
     // MARK: NSMenuDelegate
@@ -45,27 +45,27 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         let granted = isAccessibilityGranted?() ?? false
         let fingers = SystemGestureCheck.systemSwipeFingers()
         if !granted {
-            menu.addItem(header("⚠️ Потрібен дозвіл «Універсальний доступ»"))
-            menu.addItem(action("Надати дозвіл…", #selector(openAccessibility), indent: 1))
+            menu.addItem(header(L("status.needAccessibility")))
+            menu.addItem(action(L("status.grantAccessibility"), #selector(openAccessibility), indent: 1))
         } else if let fingers {
-            menu.addItem(header("Свайп \(fingers) пальцями між столами — миттєво"))
+            menu.addItem(header(L("status.swipeReady", fingers)))
         }
         if fingers == nil {
-            menu.addItem(header("⚠️ Системний свайп між столами вимкнено"))
-            menu.addItem(header("Увімкніть його: InstantSpaces перехоплює саме цей жест"))
-            menu.addItem(action("Відкрити налаштування трекпада…", #selector(openTrackpadSettings), indent: 1))
+            menu.addItem(header(L("status.swipeOff")))
+            menu.addItem(header(L("status.swipeOffHint")))
+            menu.addItem(action(L("status.openTrackpad"), #selector(openTrackpadSettings), indent: 1))
         }
         menu.addItem(.separator())
 
-        menu.addItem(check("Увімкнено", on: settings.enabled, #selector(toggleEnabled)))
-        menu.addItem(check("Інвертувати напрямок свайпу", on: settings.invertDirection, #selector(toggleInvert)))
+        menu.addItem(check(L("menu.enabled"), on: settings.enabled, #selector(toggleEnabled)))
+        menu.addItem(check(L("menu.invertSwipe"), on: settings.invertDirection, #selector(toggleInvert)))
         menu.addItem(.separator())
 
         let m = settings.hotkeyModifier.symbol
-        menu.addItem(header("Гарячі клавіші"))
-        menu.addItem(check("\(m)1 … \(m)9 — перейти на стіл N", on: settings.hotkeyDigits, #selector(toggleDigits), indent: 1))
-        menu.addItem(check("\(m)← / \(m)→ — сусідній стіл", on: settings.hotkeyArrows, #selector(toggleArrows), indent: 1))
-        let modifierItem = NSMenuItem(title: "Модифікатор: \(settings.hotkeyModifier.title)", action: nil, keyEquivalent: "")
+        menu.addItem(header(L("menu.hotkeys")))
+        menu.addItem(check(L("menu.hotkeys.digits", m), on: settings.hotkeyDigits, #selector(toggleDigits), indent: 1))
+        menu.addItem(check(L("menu.hotkeys.arrows", m), on: settings.hotkeyArrows, #selector(toggleArrows), indent: 1))
+        let modifierItem = NSMenuItem(title: L("menu.hotkeys.modifier", settings.hotkeyModifier.title), action: nil, keyEquivalent: "")
         modifierItem.indentationLevel = 1
         let modifierMenu = NSMenu()
         for modifier in HotkeyModifier.allCases {
@@ -77,19 +77,19 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         menu.addItem(modifierItem)
         menu.addItem(.separator())
 
-        menu.addItem(header("Перехід до програми (⌘Tab, Dock)"))
-        menu.addItem(check("Миттєво на стіл з її вікном", on: settings.followActivatedApp, #selector(toggleFollowApp), indent: 1))
+        menu.addItem(header(L("menu.followApp")))
+        menu.addItem(check(L("menu.followApp.toggle"), on: settings.followActivatedApp, #selector(toggleFollowApp), indent: 1))
         if settings.followActivatedApp && SystemGestureCheck.systemSwitchOnActivateEnabled() {
-            menu.addItem(header("⚠️ Діє системний перехід з анімацією"))
-            menu.addItem(header("Вимкніть «При перемиканні на програму переходити"))
-            menu.addItem(header("на простір з її відкритими вікнами»"))
-            menu.addItem(action("Відкрити «Робочий стіл і Dock»…", #selector(openDesktopSettings), indent: 1))
+            menu.addItem(header(L("menu.followApp.systemOn")))
+            menu.addItem(header(L("menu.followApp.hint1")))
+            menu.addItem(header(L("menu.followApp.hint2")))
+            menu.addItem(action(L("menu.followApp.openSettings"), #selector(openDesktopSettings), indent: 1))
         }
         menu.addItem(.separator())
 
-        menu.addItem(header("Індикатор столу"))
-        menu.addItem(check("Показувати при перемиканні", on: settings.indicatorEnabled, #selector(toggleIndicator), indent: 1))
-        let cornerItem = NSMenuItem(title: "Положення: \(settings.indicatorCorner.title)", action: nil, keyEquivalent: "")
+        menu.addItem(header(L("menu.indicator")))
+        menu.addItem(check(L("menu.indicator.show"), on: settings.indicatorEnabled, #selector(toggleIndicator), indent: 1))
+        let cornerItem = NSMenuItem(title: L("menu.indicator.position", settings.indicatorCorner.title), action: nil, keyEquivalent: "")
         cornerItem.indentationLevel = 1
         let cornerMenu = NSMenu()
         for corner in IndicatorCorner.allCases {
@@ -101,16 +101,16 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         menu.addItem(cornerItem)
         menu.addItem(.separator())
 
-        let test = NSMenuItem(title: "Тест перемикання", action: nil, keyEquivalent: "")
+        let test = NSMenuItem(title: L("menu.test"), action: nil, keyEquivalent: "")
         let testMenu = NSMenu()
-        testMenu.addItem(action("Наступний стіл →", #selector(testNext)))
-        testMenu.addItem(action("← Попередній стіл", #selector(testPrevious)))
+        testMenu.addItem(action(L("menu.test.next"), #selector(testNext)))
+        testMenu.addItem(action(L("menu.test.previous"), #selector(testPrevious)))
         test.submenu = testMenu
         menu.addItem(test)
 
-        menu.addItem(check("Запускати при вході", on: LoginItem.isEnabled, #selector(toggleLoginItem)))
+        menu.addItem(check(L("menu.launchAtLogin"), on: LoginItem.isEnabled, #selector(toggleLoginItem)))
         menu.addItem(.separator())
-        menu.addItem(action("Вийти", #selector(quit), key: "q"))
+        menu.addItem(action(L("menu.quit"), #selector(quit), key: "q"))
     }
 
     // MARK: Item helpers
@@ -179,8 +179,8 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         } catch {
             log.error("login item change failed: \(error.localizedDescription, privacy: .public)")
             let alert = NSAlert()
-            alert.messageText = "Не вдалося змінити автозапуск"
-            alert.informativeText = "\(error.localizedDescription)\n\nПеренесіть InstantSpaces.app у папку «Програми» і спробуйте ще раз."
+            alert.messageText = L("alert.loginItem.title")
+            alert.informativeText = L("alert.loginItem.message", error.localizedDescription)
             alert.runModal()
         }
     }

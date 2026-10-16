@@ -1,0 +1,49 @@
+/* Status lines at the top of the menu */
+"status.tooltip.active" = "InstantSpaces — працює";
+"status.tooltip.inactive" = "InstantSpaces — не активний";
+"status.needAccessibility" = "⚠️ Потрібен дозвіл «Універсальний доступ»";
+"status.grantAccessibility" = "Надати дозвіл…";
+"status.swipeReady" = "Свайп %ld пальцями між столами — миттєво";
+"status.swipeOff" = "⚠️ Системний свайп між столами вимкнено";
+"status.swipeOffHint" = "Увімкніть його: InstantSpaces перехоплює саме цей жест";
+"status.openTrackpad" = "Відкрити налаштування трекпада…";
+
+/* Menu */
+"menu.enabled" = "Увімкнено";
+"menu.invertSwipe" = "Інвертувати напрямок свайпу";
+"menu.hotkeys" = "Гарячі клавіші";
+"menu.hotkeys.digits" = "%1$@1 … %1$@9 — перейти на стіл N";
+"menu.hotkeys.arrows" = "%1$@← / %1$@→ — сусідній стіл";
+"menu.hotkeys.modifier" = "Модифікатор: %@";
+"menu.followApp" = "Перехід до програми (⌘Tab, Dock)";
+"menu.followApp.toggle" = "Миттєво на стіл з її вікном";
+"menu.followApp.systemOn" = "⚠️ Діє системний перехід з анімацією";
+"menu.followApp.hint1" = "Вимкніть «При перемиканні на програму переходити";
+"menu.followApp.hint2" = "на простір з її відкритими вікнами»";
+"menu.followApp.openSettings" = "Відкрити «Робочий стіл і Dock»…";
+"menu.indicator" = "Індикатор столу";
+"menu.indicator.show" = "Показувати при перемиканні";
+"menu.indicator.position" = "Положення: %@";
+"menu.test" = "Тест перемикання";
+"menu.test.next" = "Наступний стіл →";
+"menu.test.previous" = "← Попередній стіл";
+"menu.launchAtLogin" = "Запускати при вході";
+"menu.quit" = "Вийти";
+
+/* Indicator positions */
+"position.topCenter" = "Угорі по центру";
+"position.topRight" = "Угорі праворуч";
+"position.topLeft" = "Угорі ліворуч";
+"position.bottomRight" = "Унизу праворуч";
+"position.bottomLeft" = "Унизу ліворуч";
+
+/* Space indicator */
+"indicator.desktop" = "Стіл %ld";
+"indicator.fullscreenApp" = "Повноекранна програма";
+"indicator.space" = "Простір %ld";
+
+/* Alerts */
+"alert.loginItem.title" = "Не вдалося змінити автозапуск";
+"alert.loginItem.message" = "%@\n\nПеренесіть InstantSpaces.app у папку «Програми» і спробуйте ще раз.";
+"alert.fatal.title" = "InstantSpaces не може працювати";
+"alert.fatal.skylight" = "Приватний API SkyLight для читання Spaces недоступний на цій версії macOS.";

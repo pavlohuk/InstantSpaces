@@ -9,11 +9,11 @@ enum IndicatorCorner: String, CaseIterable {
 
     var title: String {
         switch self {
-        case .topCenter: return "Угорі по центру"
-        case .topRight: return "Угорі праворуч"
-        case .topLeft: return "Угорі ліворуч"
-        case .bottomRight: return "Унизу праворуч"
-        case .bottomLeft: return "Унизу ліворуч"
+        case .topCenter: return L("position.topCenter")
+        case .topRight: return L("position.topRight")
+        case .topLeft: return L("position.topLeft")
+        case .bottomRight: return L("position.bottomRight")
+        case .bottomLeft: return L("position.bottomLeft")
         }
     }
 }
@@ -105,17 +105,17 @@ final class SpaceIndicator {
         DispatchQueue.main.asyncAfter(deadline: .now() + visibleFor, execute: work)
     }
 
-    /// "Стіл N" for desktops, the app name for full-screen spaces.
+    /// "Desktop N" for desktops, the app name for full-screen spaces.
     static func name(of index: Int, in snapshot: SpaceSnapshot) -> String {
         switch snapshot.types[index] {
         case 0:
-            return "Стіл \(snapshot.desktopNumber(at: index) ?? index + 1)"
+            return L("indicator.desktop", snapshot.desktopNumber(at: index) ?? index + 1)
         case 4:
             let pid = snapshot.pids[index]
             if pid > 0, let name = NSRunningApplication(processIdentifier: pid)?.localizedName { return name }
-            return "Повноекранна програма"
+            return L("indicator.fullscreenApp")
         default:
-            return "Простір \(index + 1)"
+            return L("indicator.space", index + 1)
         }
     }
 

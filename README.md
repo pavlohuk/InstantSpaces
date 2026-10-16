@@ -7,7 +7,7 @@ A macOS menu bar app that makes switching between Spaces **instant, without the 
 - **Following apps.** ⌘Tab or a Dock click on an app whose windows are on another Space jumps there instantly.
 - **Indicator.** After every switch, a small overlay at the top of the screen names the Space you landed on.
 
-No SIP changes and no Dock patching are needed. The menu and the indicator are in Ukrainian.
+No SIP changes and no Dock patching are needed. The app is available in English and Ukrainian and follows the system language.
 
 Developed and tested on macOS 27.0 on Apple Silicon. The minimum supported version is macOS 13, but versions before 27 are untested.
 
@@ -32,11 +32,11 @@ To build without installing, run `Scripts/build-app.sh`. The app is written to `
 1. **Keep the system swipe on.** Open System Settings → Trackpad → More Gestures. Set "Swipe between full-screen applications" to three or four fingers. InstantSpaces intercepts exactly this gesture, so it must stay enabled.
 2. **Grant Accessibility.** macOS asks on first launch. You can also go to System Settings → Privacy & Security → Accessibility and turn on InstantSpaces. The app notices the permission within a couple of seconds, so no restart is needed.
 3. **Optional: turn off the animated app switch.** Go to System Settings → Desktop & Dock → Mission Control. Turn off "When switching to an application, switch to a Space with open windows for the application". This is required for the instant ⌘Tab behaviour described below.
-4. **Optional: start at login.** Enable "Запускати при вході" (Launch at login) in the app's menu. The app must be in `/Applications` for this to work.
+4. **Optional: start at login.** Enable "Launch at Login" in the app's menu. The app must be in `/Applications` for this to work.
 
 Now swipe with three fingers. Spaces switch instantly, and an overlay shows where you are.
 
-If the Accessibility toggle looks on but nothing happens, reset the entry and grant it again. This can happen after replacing the app with a build signed differently. Then click "Надати дозвіл…" (Grant permission) in the app's menu.
+If the Accessibility toggle looks on but nothing happens, reset the entry and grant it again. This can happen after replacing the app with a build signed differently. Then click "Grant Permission…" in the app's menu.
 
 ```bash
 tccutil reset Accessibility com.pavlohuk.InstantSpaces
@@ -73,7 +73,7 @@ This needs the system option from step 3 of the setup to be off. While it is on,
 
 ### Space indicator
 
-After every Space change, an overlay appears for about a second at the top centre of the screen, just below the menu bar. It shows the Space name: "Стіл N" (Desktop N) for desktops, or the app name for a full-screen Space. Below the name is a row of marks for all Spaces in Dock order. A dot is a desktop, a short pill is a full-screen app, and the current Space is highlighted.
+After every Space change, an overlay appears for about a second at the top centre of the screen, just below the menu bar. It shows the Space name: "Desktop N" for desktops, or the app name for a full-screen Space. Below the name is a row of marks for all Spaces in Dock order. A dot is a desktop, a short pill is a full-screen app, and the current Space is highlighted.
 
 - It reacts to every kind of switch, including swipes, hotkeys, Mission Control, Dock clicks and the system Ctrl+←/→.
 - It appears once the Dock has landed on the final Space, so a multi-Space jump never shows the Spaces in between.
@@ -83,15 +83,21 @@ After every Space change, an overlay appears for about a second at the top centr
 ## Menu
 
 - **Status.** Shows whether Accessibility is granted and which finger count the system swipe uses.
-- **Увімкнено (Enabled).** The master switch. When it is off, swipes reach the system unchanged with the normal animation, and the hotkeys and app following do nothing.
-- **Інвертувати напрямок свайпу (Invert swipe direction).** Affects the trackpad only.
-- **Гарячі клавіші (Hotkeys).** Toggles for digits and arrows, and the modifier choice.
-- **Перехід до програми (Go to app).** Toggles following the activated app.
-- **Індикатор столу (Space indicator).** On/off and the position on screen.
-- **Тест перемикання (Test switch).** Switches to the neighbouring Space without a gesture.
-- **Запускати при вході (Launch at login).** Uses `SMAppService`.
+- **Enabled.** The master switch. When it is off, swipes reach the system unchanged with the normal animation, and the hotkeys and app following do nothing.
+- **Invert Swipe Direction.** Affects the trackpad only.
+- **Hotkeys.** Toggles for digits and arrows, and the modifier choice.
+- **Go to App (⌘Tab, Dock).** Toggles following the activated app.
+- **Space Indicator.** On/off and the position on screen.
+- **Test Switch.** Switches to the neighbouring Space without a gesture.
+- **Launch at Login.** Uses `SMAppService`.
 
 Settings are stored in the `com.pavlohuk.InstantSpaces` defaults domain.
+
+## Language
+
+The menu, the indicator and the alerts are localized in English and Ukrainian. macOS picks the language from your preferred languages in System Settings → General → Language & Region. Any other language falls back to English. To use a different language for InstantSpaces only, add it under Applications in the same settings pane.
+
+The translations are in `Resources/en.lproj/Localizable.strings` and `Resources/uk.lproj/Localizable.strings`. Both files must contain the same keys.
 
 ## Troubleshooting
 

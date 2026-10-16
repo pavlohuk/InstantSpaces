@@ -11,6 +11,7 @@ rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp ".build/release/InstantSpaces" "$APP/Contents/MacOS/InstantSpaces"
 cp "Resources/Info.plist" "$APP/Contents/Info.plist"
+cp -R Resources/*.lproj "$APP/Contents/Resources/"
 printf 'APPL????' > "$APP/Contents/PkgInfo"
 
 IDENTITY="${CODESIGN_IDENTITY:--}"

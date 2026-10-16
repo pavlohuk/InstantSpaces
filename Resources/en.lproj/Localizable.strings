@@ -1,0 +1,49 @@
+/* Status lines at the top of the menu */
+"status.tooltip.active" = "InstantSpaces is active";
+"status.tooltip.inactive" = "InstantSpaces is not active";
+"status.needAccessibility" = "⚠️ Accessibility permission is required";
+"status.grantAccessibility" = "Grant Permission…";
+"status.swipeReady" = "%ld-finger swipe between desktops is instant";
+"status.swipeOff" = "⚠️ The system swipe between desktops is off";
+"status.swipeOffHint" = "Turn it on: InstantSpaces intercepts that gesture";
+"status.openTrackpad" = "Open Trackpad Settings…";
+
+/* Menu */
+"menu.enabled" = "Enabled";
+"menu.invertSwipe" = "Invert Swipe Direction";
+"menu.hotkeys" = "Hotkeys";
+"menu.hotkeys.digits" = "%1$@1 … %1$@9 — go to desktop N";
+"menu.hotkeys.arrows" = "%1$@← / %1$@→ — neighboring Space";
+"menu.hotkeys.modifier" = "Modifier: %@";
+"menu.followApp" = "Go to App (⌘Tab, Dock)";
+"menu.followApp.toggle" = "Jump Instantly to Its Desktop";
+"menu.followApp.systemOn" = "⚠️ The system’s animated switch is on";
+"menu.followApp.hint1" = "Turn off “When switching to an application, switch";
+"menu.followApp.hint2" = "to a Space with open windows for the application”";
+"menu.followApp.openSettings" = "Open Desktop & Dock Settings…";
+"menu.indicator" = "Space Indicator";
+"menu.indicator.show" = "Show When Switching";
+"menu.indicator.position" = "Position: %@";
+"menu.test" = "Test Switch";
+"menu.test.next" = "Next Space →";
+"menu.test.previous" = "← Previous Space";
+"menu.launchAtLogin" = "Launch at Login";
+"menu.quit" = "Quit";
+
+/* Indicator positions */
+"position.topCenter" = "Top Center";
+"position.topRight" = "Top Right";
+"position.topLeft" = "Top Left";
+"position.bottomRight" = "Bottom Right";
+"position.bottomLeft" = "Bottom Left";
+
+/* Space indicator */
+"indicator.desktop" = "Desktop %ld";
+"indicator.fullscreenApp" = "Full-Screen App";
+"indicator.space" = "Space %ld";
+
+/* Alerts */
+"alert.loginItem.title" = "Couldn’t change launch at login";
+"alert.loginItem.message" = "%@\n\nMove InstantSpaces.app to the Applications folder and try again.";
+"alert.fatal.title" = "InstantSpaces can’t run";
+"alert.fatal.skylight" = "The private SkyLight API for reading Spaces isn’t available on this version of macOS.";
