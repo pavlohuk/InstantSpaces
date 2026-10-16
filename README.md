@@ -1,97 +1,123 @@
 # InstantSpaces
 
-Менюбар-утиліта для macOS: системний свайп між робочими столами (3 або 4 пальці) перемикає їх **миттєво, без анімації переходу**.
+A macOS menu bar app that makes switching between Spaces **instant, without the slide animation**.
 
-## Як це працює
+- **Trackpad swipe.** The system three- or four-finger swipe between desktops switches immediately.
+- **Hotkeys.** ⌘1…⌘9 jumps straight to desktop N, and ⌘←/⌘→ moves to the neighbouring Space.
+- **Following apps.** ⌘Tab or a Dock click on an app whose windows are on another Space jumps there instantly.
+- **Indicator.** After every switch, a small overlay at the top of the screen names the Space you landed on.
 
-1. Сам жест розпізнає macOS — тому системний свайп між столами **має бути увімкнений**.
-2. InstantSpaces ставить event tap на рівні сесії і перехоплює події «Dock swipe», які трекпад надсилає Dock. Початок і середину жесту він відкидає.
-3. Замість них апка надсилає Dock синтетичний свайп з мізерним прогресом і величезною швидкістю «кидка». Dock виконує перемикання сам, але завершує його одразу, тож анімації немає.
+No SIP changes and no Dock patching are needed. The menu and the indicator are in Ukrainian.
 
-Оскільки перемикає сам Dock, вікна попереднього столу ховаються правильно, повноекранні програми працюють як звичайні столи, а сторонні програми отримують звичайне сповіщення про зміну Space.
+Developed and tested on macOS 27.0 on Apple Silicon. The minimum supported version is macOS 13, but versions before 27 are untested.
 
-Техніку синтетичного свайпу (поля подій і IOHID-блок, потрібний на macOS 27) взято з [InstantSpaceSwitcher](https://github.com/jurplel/InstantSpaceSwitcher) за ліцензією MIT. Текст ліцензії лежить у `THIRD_PARTY_LICENSE-InstantSpaceSwitcher.txt` і в заголовку `Sources/CShims/dockswipe.c`.
+## Quick start
 
-SIP вимикати не треба, Dock не патчиться.
+### 1. Build and install
 
-## Встановлення
-
-Потрібен Xcode (або Command Line Tools) зі Swift 5.9+.
+You need Xcode or the Xcode Command Line Tools with Swift 5.9 or later.
 
 ```bash
+git clone https://github.com/pavlohuk/InstantSpaces.git
+cd InstantSpaces
 Scripts/install.sh
 ```
 
-Скрипт збирає release-версію, підписує ad-hoc, копіює в `/Applications/InstantSpaces.app` і запускає. Тільки зібрати: `Scripts/build-app.sh` (результат у `build/`).
+The script builds a release binary and packs it into `InstantSpaces.app`. It signs the app ad hoc, copies it to `/Applications`, and launches it. An icon appears in the menu bar.
 
-## Налаштування macOS
+To build without installing, run `Scripts/build-app.sh`. The app is written to `build/InstantSpaces.app`.
 
-1. **Системні налаштування → Трекпад → Інші жести → «Перемикання повноекранних програм»** — має бути «Трьома пальцями» або «Чотирма пальцями».
-1. **Системні налаштування → Робочий стіл і Dock → «При перемиканні на програму переходити на простір з її відкритими вікнами»** — вимкнути, якщо потрібен миттєвий перехід при ⌘Tab.
-2. **Системні налаштування → Конфіденційність і безпека → Універсальний доступ** — увімкнути InstantSpaces. Запит з'являється при першому запуску. Апка сама помітить дозвіл за пару секунд, перезапуск не потрібен.
+### 2. Configure macOS
 
-Якщо InstantSpaces уже був у списку від старої збірки (до 16.10.2026), перемикач може виглядати увімкненим, але не діяти. Тоді скиньте запис і видайте дозвіл заново:
+1. **Keep the system swipe on.** Open System Settings → Trackpad → More Gestures. Set "Swipe between full-screen applications" to three or four fingers. InstantSpaces intercepts exactly this gesture, so it must stay enabled.
+2. **Grant Accessibility.** macOS asks on first launch. You can also go to System Settings → Privacy & Security → Accessibility and turn on InstantSpaces. The app notices the permission within a couple of seconds, so no restart is needed.
+3. **Optional: turn off the animated app switch.** Go to System Settings → Desktop & Dock → Mission Control. Turn off "When switching to an application, switch to a Space with open windows for the application". This is required for the instant ⌘Tab behaviour described below.
+4. **Optional: start at login.** Enable "Запускати при вході" (Launch at login) in the app's menu. The app must be in `/Applications` for this to work.
+
+Now swipe with three fingers. Spaces switch instantly, and an overlay shows where you are.
+
+If the Accessibility toggle looks on but nothing happens, reset the entry and grant it again. This can happen after replacing the app with a build signed differently. Then click "Надати дозвіл…" (Grant permission) in the app's menu.
 
 ```bash
 tccutil reset Accessibility com.pavlohuk.InstantSpaces
 ```
 
-Після цього в меню апки натисніть «Надати дозвіл…» і увімкніть InstantSpaces у списку.
+## How it works
 
-## Гарячі клавіші
+1. macOS recognises the swipe itself and sends "Dock swipe" gesture events to the Dock.
+2. InstantSpaces installs a session event tap that swallows those events.
+3. Instead, it posts a synthetic Dock swipe with a near-zero progress and a huge fling velocity. The Dock performs the switch but finishes it at once, so there is nothing to animate.
 
-- **⌘1 … ⌘9** — одразу перейти на робочий стіл N. Рахуються лише звичайні столи, як «Стіл 1, Стіл 2…» у Mission Control; повноекранні програми пропускаються. Якщо стола N немає, натискання проходить у програму як зазвичай.
-- **⌘← / ⌘→** — сусідній Space, включно з повноекранними програмами, у тому порядку, що й свайп.
+Because the Dock does the switching, windows of the previous Space are hidden properly. Full-screen apps behave like any other Space, and other apps get the normal Space-change notification.
 
-Стрибок через кілька столів — це кілька миттєвих свайпів підряд, тож він теж без анімації.
+Switching Spaces directly through SkyLight's `SLSManagedDisplaySetCurrentSpace` was tried first and rejected. It changes the current Space without animation, but it leaves every window of the previous Space on screen.
 
-Увага: ці комбінації перехоплюються глобально, тож програми їх більше не отримують. Зокрема перестають працювати ⌘1…9 у браузерах (вкладки) і Finder (вигляд), а також ⌘←/→ у текстових полях (початок або кінець рядка). Тому в меню є вибір модифікатора (⌘, ⌃, ⌥ або ⌃⌥) і окремі вимикачі для цифр і стрілок. Автоповтор затиснутої стрілки ігнорується.
+The synthetic swipe technique comes from [InstantSpaceSwitcher](https://github.com/jurplel/InstantSpaceSwitcher) by jurplel, under the MIT license. That includes the event fields and the raw IOHID payload that macOS 27 requires. The license text is in `THIRD_PARTY_LICENSE-InstantSpaceSwitcher.txt` and in the header of `Sources/CShims/dockswipe.c`.
 
-## Перехід до програми (⌘Tab, Dock)
+## Features
 
-Коли активується програма, у якої немає вікон на поточному столі (⌘Tab, клік у Dock, відкриття посилання тощо), InstantSpaces миттєво переходить на стіл з її останнім вікном. Повноекранні програми теж працюють. Якщо вікно програми вже є на поточному столі, нічого не відбувається.
+### Hotkeys
 
-Системна опція, що робить те саме з анімацією, при цьому має бути **вимкнена**: Системні налаштування → Робочий стіл і Dock → Mission Control → «При перемиканні на програму переходити на простір з її відкритими вікнами». Поки вона ввімкнена, InstantSpaces не втручається, щоб два перемикання не зіткнулися, а в меню показує попередження.
+- **⌘1 … ⌘9** jumps straight to desktop N. Only regular desktops are counted, matching the "Desktop 1, Desktop 2…" labels in Mission Control, so full-screen apps are skipped. If there is no desktop N, the keystroke goes to the frontmost app as usual.
+- **⌘← / ⌘→** moves to the neighbouring Space. Full-screen apps are included, in the same order as the swipe.
 
-## Індикатор столу
+A jump across several Spaces is a burst of instant swipes, so it has no animation either. Holding an arrow key does not repeat the switch.
 
-Після кожного перемикання в кутку екрана на секунду з'являється плашка з назвою простору: «Стіл 2», а для повноекранного простору — назва програми. Під назвою рядок позначок усіх просторів у порядку Dock: крапка — стіл, коротка смужка — повноекранна програма, поточний підсвічено.
+These shortcuts are captured globally, so apps no longer receive them. ⌘1…9 stops switching browser tabs and Finder views, and ⌘←/→ stops moving the cursor to the start or end of a line. To avoid this, pick another modifier in the menu: ⌘, ⌃, ⌥ or ⌃⌥. Digits and arrows can also be turned off separately.
 
-- Спрацьовує на будь-яке перемикання: свайп, гарячі клавіші, Mission Control, клік у Dock, системне Ctrl+←/→.
-- Показується, щойно Dock опинився на кінцевому столі, тож при стрибку через кілька столів проміжних назв не видно.
-- Не забирає фокус і не перехоплює кліки, видна і в повноекранних програмах.
-- За замовчуванням угорі по центру, під рядком меню. Положення (центр угорі або один із кутів) і вимикач — у меню.
+### Following the activated app (⌘Tab, Dock)
 
-## Меню
+Sometimes an app becomes active while none of its windows is on the current Space. This happens with ⌘Tab, a Dock click, or opening a link. InstantSpaces then jumps instantly to the Space holding that app's most recently used window. Full-screen apps are supported. If the app already has a window on the current Space, nothing happens.
 
-- **Стан** — чи є дозвіл і на скільки пальців налаштований системний свайп.
-- **Увімкнено** — головний вимикач. Коли вимкнено, свайп проходить до системи як є (зі звичайною анімацією), а гарячі клавіші не діють.
-- **Інвертувати напрямок свайпу** — стосується лише трекпада.
-- **Гарячі клавіші** — вимикачі для цифр і стрілок та вибір модифікатора.
-- **Перехід до програми** — вимикач миттєвого переходу на стіл програми при ⌘Tab чи кліку в Dock.
-- **Індикатор столу** — вимикач і вибір положення на екрані.
-- **Тест перемикання** — миттєво на сусідній стіл без жесту.
-- **Запускати при вході** — через `SMAppService` (апка має лежати в `/Applications`).
+This needs the system option from step 3 of the setup to be off. While it is on, the Dock performs its own animated switch. InstantSpaces then stays out of the way so the two switches do not collide, and its menu shows a warning.
 
-Налаштування зберігаються в `defaults` домену `com.pavlohuk.InstantSpaces`.
+### Space indicator
 
-## Налагодження
+After every Space change, an overlay appears for about a second at the top centre of the screen, just below the menu bar. It shows the Space name: "Стіл N" (Desktop N) for desktops, or the app name for a full-screen Space. Below the name is a row of marks for all Spaces in Dock order. A dot is a desktop, a short pill is a full-screen app, and the current Space is highlighted.
+
+- It reacts to every kind of switch, including swipes, hotkeys, Mission Control, Dock clicks and the system Ctrl+←/→.
+- It appears once the Dock has landed on the final Space, so a multi-Space jump never shows the Spaces in between.
+- It never takes focus or intercepts clicks, and it is visible over full-screen apps.
+- Its position can be the top centre or any corner, and it can be turned off in the menu.
+
+## Menu
+
+- **Status.** Shows whether Accessibility is granted and which finger count the system swipe uses.
+- **Увімкнено (Enabled).** The master switch. When it is off, swipes reach the system unchanged with the normal animation, and the hotkeys and app following do nothing.
+- **Інвертувати напрямок свайпу (Invert swipe direction).** Affects the trackpad only.
+- **Гарячі клавіші (Hotkeys).** Toggles for digits and arrows, and the modifier choice.
+- **Перехід до програми (Go to app).** Toggles following the activated app.
+- **Індикатор столу (Space indicator).** On/off and the position on screen.
+- **Тест перемикання (Test switch).** Switches to the neighbouring Space without a gesture.
+- **Запускати при вході (Launch at login).** Uses `SMAppService`.
+
+Settings are stored in the `com.pavlohuk.InstantSpaces` defaults domain.
+
+## Troubleshooting
+
+Stream the app's log:
 
 ```bash
 /usr/bin/log stream --predicate 'subsystem == "com.pavlohuk.InstantSpaces"' --level info
 ```
 
-(У zsh `log` — це вбудована команда оболонки, тому потрібен `/usr/bin/log`.) На кожен свайп чи гарячу клавішу має з'являтися рядок на кшталт `switch next: space 1 -> 2 of 3` або `switch desktop 3: space 1 -> 5 of 5`.
+In zsh, `log` is a shell builtin, so use the full path `/usr/bin/log`. Every swipe or hotkey should print a line such as `switch next: space 1 -> 2 of 3` or `switch desktop 3: space 1 -> 5 of 5`. Every indicator prints whether it was actually visible on screen.
 
-Перемкнути з терміналу без жесту:
+Switch Spaces from a terminal without a gesture:
 
 ```bash
-kill -USR1 $(pgrep -x InstantSpaces)   # наступний стіл
-kill -USR2 $(pgrep -x InstantSpaces)   # попередній стіл
+kill -USR1 $(pgrep -x InstantSpaces)   # next Space
+kill -USR2 $(pgrep -x InstantSpaces)   # previous Space
 ```
 
-## Обмеження
+Common problems:
 
-- Використовуються недокументовані поля подій і приватні API; оновлення macOS може це зламати.
-- На крайньому столі свайп «за край» просто ігнорується (без пружного відскоку). Апка навмисно не надсилає перемикання за останній стіл: на macOS 27 це може підвісити Dock.
-- Підпис ad-hoc, але вимога підпису прив'язана до ідентифікатора `com.pavlohuk.InstantSpaces`, а не до хешу збірки. Тому дозвіл «Універсальний доступ» переживає перезбірки. Зворотний бік: будь-яка програма з тим самим ідентифікатором отримала б цей дозвіл, тож не підписуйте так нічого іншого.
+- **The swipe does nothing.** The system swipe between full-screen applications is probably off. The menu shows a warning in that case.
+- **The swipe still animates.** Accessibility is probably not granted, so the app cannot install its event tap. Check the first lines of the menu.
+- **Double switches or two overlays.** Another tool that intercepts the same gesture is running, for example InstantSpaceSwitcher. Quit it and remove it from Login Items.
+
+## Limitations
+
+- Undocumented event fields and private APIs are used, so a macOS update may break the app.
+- At the first or last Space, a swipe past the edge is ignored, with no rubber-band bounce. The app deliberately never posts a switch beyond the last Space, because on macOS 27 that can wedge the Dock.
+- The build is signed ad hoc, but the designated requirement is pinned to the bundle identifier `com.pavlohuk.InstantSpaces` rather than to the build's hash. That is why the Accessibility permission survives rebuilds. The trade-off is that any app signed the same way with the same identifier would inherit the permission, so do not reuse that identifier for anything else.
