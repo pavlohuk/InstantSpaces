@@ -46,6 +46,8 @@ final class Settings {
         static let hotkeyDigits = "hotkeyDigits"
         static let hotkeyArrows = "hotkeyArrows"
         static let hotkeyModifier = "hotkeyModifier"
+        static let indicatorEnabled = "indicatorEnabled"
+        static let indicatorCorner = "indicatorCorner"
     }
 
     private let defaults = UserDefaults.standard
@@ -57,6 +59,8 @@ final class Settings {
             Key.hotkeyDigits: true,
             Key.hotkeyArrows: true,
             Key.hotkeyModifier: HotkeyModifier.command.rawValue,
+            Key.indicatorEnabled: true,
+            Key.indicatorCorner: IndicatorCorner.topCenter.rawValue,
         ])
     }
 
@@ -88,5 +92,16 @@ final class Settings {
     var hotkeyModifier: HotkeyModifier {
         get { HotkeyModifier(rawValue: defaults.string(forKey: Key.hotkeyModifier) ?? "") ?? .command }
         set { defaults.set(newValue.rawValue, forKey: Key.hotkeyModifier) }
+    }
+
+    /// Shows the corner indicator with the current space after every switch.
+    var indicatorEnabled: Bool {
+        get { defaults.bool(forKey: Key.indicatorEnabled) }
+        set { defaults.set(newValue, forKey: Key.indicatorEnabled) }
+    }
+
+    var indicatorCorner: IndicatorCorner {
+        get { IndicatorCorner(rawValue: defaults.string(forKey: Key.indicatorCorner) ?? "") ?? .topCenter }
+        set { defaults.set(newValue.rawValue, forKey: Key.indicatorCorner) }
     }
 }

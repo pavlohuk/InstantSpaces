@@ -95,11 +95,14 @@ bool is_spaces_info(ISSpaceInfo *out) {
             CFDictionaryRef s = CFArrayGetValueAtIndex(spaces, i);
             CFNumberRef idn = CFDictionaryGetValue(s, CFSTR("id64"));
             CFNumberRef tn = CFDictionaryGetValue(s, CFSTR("type"));
+            CFNumberRef pn = CFDictionaryGetValue(s, CFSTR("pid"));
             uint64_t id = 0;
-            int32_t type = 0;
+            int32_t type = 0, pid = 0;
             if (idn) CFNumberGetValue(idn, kCFNumberSInt64Type, &id);
             if (tn) CFNumberGetValue(tn, kCFNumberSInt32Type, &type);
+            if (pn) CFNumberGetValue(pn, kCFNumberSInt32Type, &pid);
             out->types[i] = type;
+            out->pids[i] = pid;
             if (id == cur && !found) { out->index = (uint32_t)i; found = true; }
         }
         out->count = (uint32_t)n;

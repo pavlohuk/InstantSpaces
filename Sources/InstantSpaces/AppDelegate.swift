@@ -8,6 +8,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private var statusBar: StatusBarController?
     private let switcher = SpaceSwitcher()
+    private let indicator = SpaceIndicator()
+    /// Target of our own switch, shown once the Dock has actually landed there.
+    private var pendingIndicator: SpaceSnapshot?
+    private var pendingFallback: DispatchWorkItem?
     private var signalSources: [DispatchSourceSignal] = []
     private var permissionTimer: Timer?
 
@@ -35,8 +39,60 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusBar.isInterceptActive = { is_ds_tap_installed() }
         self.statusBar = statusBar
 
+        switcher.onShowSpace = { [weak self] snapshot, switched in
+            self?.spaceRequested(snapshot, switched: switched)
+        }
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self, selector: #selector(activeSpaceDidChange),
+            name: NSWorkspace.activeSpaceDidChangeNotification, object: nil)
+
         installSignalHandlers()
         startInterception()
+    }
+
+    // MARK: Indicator
+
+    /// Our own switch. Showing the indicator right away would put it on screen while the Dock is
+    /// still moving between spaces, so wait until it lands on the target.
+    private func spaceRequested(_ snapshot: SpaceSnapshot, switched: Bool) {
+        guard switched else {
+            showIndicator(snapshot)
+            return
+        }
+        pendingIndicator = snapshot
+        pendingFallback?.cancel()
+        let fallback = DispatchWorkItem { [weak self] in self?.showPendingIndicator() }
+        pendingFallback = fallback
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: fallback)
+    }
+
+    /// Any space change, including ones InstantSpaces did not make (Mission Control, Dock clicks,
+    /// the animated system switch when InstantSpaces is turned off).
+    @objc private func activeSpaceDidChange() {
+        guard let landed = switcher.snapshot(usePrediction: false) else { return }
+        log.info("active space changed to \(landed.current + 1) of \(landed.count)")
+        if let pending = pendingIndicator {
+            // Intermediate hops of a multi-space jump are skipped.
+            if landed.current == pending.current { showPendingIndicator() }
+            return
+        }
+        // Late notifications from our own burst of swipes.
+        guard !switcher.isPredicting else { return }
+        showIndicator(landed)
+    }
+
+    private func showPendingIndicator() {
+        pendingFallback?.cancel()
+        pendingFallback = nil
+        guard let pending = pendingIndicator else { return }
+        pendingIndicator = nil
+        showIndicator(pending)
+    }
+
+    private func showIndicator(_ snapshot: SpaceSnapshot) {
+        let settings = Settings.shared
+        guard settings.indicatorEnabled else { return }
+        indicator.show(snapshot, corner: settings.indicatorCorner)
     }
 
     // MARK: Interception

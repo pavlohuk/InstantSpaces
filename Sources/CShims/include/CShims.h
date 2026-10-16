@@ -17,6 +17,7 @@ typedef struct {
     uint32_t count;     // spaces on that display (desktops and full-screen apps), in Dock order
     char display[128];  // display UUID
     int32_t types[IS_MAX_SPACES];  // per space: 0 = desktop, 4 = full-screen app, other = system
+    int32_t pids[IS_MAX_SPACES];   // per space: owning app of a full-screen space, 0 otherwise
 } ISSpaceInfo;
 
 bool is_spaces_available(void);

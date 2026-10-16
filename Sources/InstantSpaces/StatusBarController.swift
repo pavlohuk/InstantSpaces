@@ -77,6 +77,20 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         menu.addItem(modifierItem)
         menu.addItem(.separator())
 
+        menu.addItem(header("Індикатор столу"))
+        menu.addItem(check("Показувати при перемиканні", on: settings.indicatorEnabled, #selector(toggleIndicator), indent: 1))
+        let cornerItem = NSMenuItem(title: "Положення: \(settings.indicatorCorner.title)", action: nil, keyEquivalent: "")
+        cornerItem.indentationLevel = 1
+        let cornerMenu = NSMenu()
+        for corner in IndicatorCorner.allCases {
+            let mi = check(corner.title, on: corner == settings.indicatorCorner, #selector(setCorner(_:)))
+            mi.representedObject = corner.rawValue
+            cornerMenu.addItem(mi)
+        }
+        cornerItem.submenu = cornerMenu
+        menu.addItem(cornerItem)
+        menu.addItem(.separator())
+
         let test = NSMenuItem(title: "Тест перемикання", action: nil, keyEquivalent: "")
         let testMenu = NSMenu()
         testMenu.addItem(action("Наступний стіл →", #selector(testNext)))
@@ -121,6 +135,15 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     @objc private func toggleInvert() { settings.invertDirection.toggle(); changed() }
     @objc private func toggleDigits() { settings.hotkeyDigits.toggle(); changed() }
     @objc private func toggleArrows() { settings.hotkeyArrows.toggle(); changed() }
+
+    @objc private func toggleIndicator() { settings.indicatorEnabled.toggle(); changed() }
+
+    @objc private func setCorner(_ sender: NSMenuItem) {
+        if let raw = sender.representedObject as? String, let corner = IndicatorCorner(rawValue: raw) {
+            settings.indicatorCorner = corner
+            changed()
+        }
+    }
 
     @objc private func setModifier(_ sender: NSMenuItem) {
         if let raw = sender.representedObject as? String, let modifier = HotkeyModifier(rawValue: raw) {
