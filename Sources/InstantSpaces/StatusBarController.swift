@@ -1,0 +1,129 @@
+import AppKit
+import ApplicationServices
+
+final class StatusBarController: NSObject, NSMenuDelegate {
+    private let item: NSStatusItem
+    private let menu = NSMenu()
+    private let settings = Settings.shared
+
+    var onSettingsChanged: (() -> Void)?
+    var onTestSwitch: ((SpaceStep) -> Void)?
+    var isAccessibilityGranted: (() -> Bool)?
+    var isInterceptActive: (() -> Bool)?
+
+    override init() {
+        item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        super.init()
+        menu.delegate = self
+        item.menu = menu
+        updateIcon()
+    }
+
+    func updateIcon() {
+        guard let button = item.button else { return }
+        let ready = settings.enabled && (isInterceptActive?() ?? false)
+        let symbol = ready ? "rectangle.2.swap" : "rectangle.slash"
+        let image = NSImage(systemSymbolName: symbol, accessibilityDescription: "InstantSpaces")
+            ?? NSImage(systemSymbolName: "arrow.left.arrow.right", accessibilityDescription: "InstantSpaces")
+        image?.isTemplate = true
+        button.image = image
+        button.toolTip = ready ? "InstantSpaces — працює" : "InstantSpaces — не активний"
+    }
+
+    // MARK: NSMenuDelegate
+
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        rebuild()
+    }
+
+    private func rebuild() {
+        menu.removeAllItems()
+
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
+        menu.addItem(header("InstantSpaces \(version)"))
+
+        let granted = isAccessibilityGranted?() ?? false
+        let fingers = SystemGestureCheck.systemSwipeFingers()
+        if !granted {
+            menu.addItem(header("⚠️ Потрібен дозвіл «Універсальний доступ»"))
+            menu.addItem(action("Надати дозвіл…", #selector(openAccessibility), indent: 1))
+        } else if let fingers {
+            menu.addItem(header("Свайп \(fingers) пальцями між столами — миттєво"))
+        }
+        if fingers == nil {
+            menu.addItem(header("⚠️ Системний свайп між столами вимкнено"))
+            menu.addItem(header("Увімкніть його: InstantSpaces перехоплює саме цей жест"))
+            menu.addItem(action("Відкрити налаштування трекпада…", #selector(openTrackpadSettings), indent: 1))
+        }
+        menu.addItem(.separator())
+
+        menu.addItem(check("Увімкнено", on: settings.enabled, #selector(toggleEnabled)))
+        menu.addItem(check("Інвертувати напрямок", on: settings.invertDirection, #selector(toggleInvert)))
+        menu.addItem(.separator())
+
+        let test = NSMenuItem(title: "Тест перемикання", action: nil, keyEquivalent: "")
+        let testMenu = NSMenu()
+        testMenu.addItem(action("Наступний стіл →", #selector(testNext)))
+        testMenu.addItem(action("← Попередній стіл", #selector(testPrevious)))
+        test.submenu = testMenu
+        menu.addItem(test)
+
+        menu.addItem(check("Запускати при вході", on: LoginItem.isEnabled, #selector(toggleLoginItem)))
+        menu.addItem(.separator())
+        menu.addItem(action("Вийти", #selector(quit), key: "q"))
+    }
+
+    // MARK: Item helpers
+
+    private func header(_ title: String) -> NSMenuItem {
+        let mi = NSMenuItem(title: title, action: nil, keyEquivalent: "")
+        mi.isEnabled = false
+        return mi
+    }
+
+    private func action(_ title: String, _ selector: Selector, key: String = "", indent: Int = 0) -> NSMenuItem {
+        let mi = NSMenuItem(title: title, action: selector, keyEquivalent: key)
+        mi.target = self
+        mi.indentationLevel = indent
+        return mi
+    }
+
+    private func check(_ title: String, on: Bool, _ selector: Selector) -> NSMenuItem {
+        let mi = action(title, selector)
+        mi.state = on ? .on : .off
+        return mi
+    }
+
+    private func changed() {
+        onSettingsChanged?()
+        updateIcon()
+    }
+
+    // MARK: Actions
+
+    @objc private func toggleEnabled() { settings.enabled.toggle(); changed() }
+    @objc private func toggleInvert() { settings.invertDirection.toggle(); changed() }
+    @objc private func openTrackpadSettings() { SystemGestureCheck.openTrackpadSettings() }
+    @objc private func openAccessibility() {
+        // Re-asking puts InstantSpaces back into the Accessibility list if its entry was removed.
+        let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
+        _ = AXIsProcessTrustedWithOptions(options)
+        SystemGestureCheck.openAccessibilitySettings()
+    }
+    @objc private func testNext() { onTestSwitch?(.next) }
+    @objc private func testPrevious() { onTestSwitch?(.previous) }
+
+    @objc private func toggleLoginItem() {
+        do {
+            try LoginItem.set(!LoginItem.isEnabled)
+        } catch {
+            log.error("login item change failed: \(error.localizedDescription, privacy: .public)")
+            let alert = NSAlert()
+            alert.messageText = "Не вдалося змінити автозапуск"
+            alert.informativeText = "\(error.localizedDescription)\n\nПеренесіть InstantSpaces.app у папку «Програми» і спробуйте ще раз."
+            alert.runModal()
+        }
+    }
+
+    @objc private func quit() { NSApp.terminate(nil) }
+}
