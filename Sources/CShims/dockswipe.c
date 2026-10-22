@@ -200,6 +200,7 @@ static CFRunLoopSourceRef g_tap_source = NULL;
 static bool g_intercept = true;
 static ISSwipeHandler g_handler = NULL;
 static ISKeyHandler g_key_handler = NULL;
+static ISMouseHandler g_mouse_handler = NULL;
 static uint8_t g_swallowed_keys[128];  // key-downs we swallowed, so their key-ups are swallowed too
 static bool g_tracking = false;
 static bool g_fired = false;
@@ -271,6 +272,13 @@ static CGEventRef tap_callback(CGEventTapProxy proxy, CGEventType type, CGEventR
         if (g_tap) CGEventTapEnable(g_tap, true);
         g_own_events_pending = 0;
         return event;
+    }
+
+    if (type == kCGEventLeftMouseDown || type == kCGEventLeftMouseUp) {
+        if (!g_mouse_handler) return event;
+        if (CGEventGetIntegerValueField(event, kCGEventSourceUserData) == IS_REPLAY_MARKER) return event;
+        CGPoint p = CGEventGetLocation(event);
+        return g_mouse_handler(type == kCGEventLeftMouseDown, p.x, p.y, (uint64_t)CGEventGetFlags(event)) ? NULL : event;
     }
 
     if (type == kCGEventKeyDown || type == kCGEventKeyUp) {
@@ -347,7 +355,8 @@ static CGEventRef tap_callback(CGEventTapProxy proxy, CGEventType type, CGEventR
 bool is_ds_tap_install(void) {
     if (g_tap) return true;
     CGEventMask mask = (1ULL << kEventGesture) | (1ULL << kEventDockControl)
-        | CGEventMaskBit(kCGEventKeyDown) | CGEventMaskBit(kCGEventKeyUp);
+        | CGEventMaskBit(kCGEventKeyDown) | CGEventMaskBit(kCGEventKeyUp)
+        | CGEventMaskBit(kCGEventLeftMouseDown) | CGEventMaskBit(kCGEventLeftMouseUp);
     g_tap = CGEventTapCreate(kCGSessionEventTap, kCGHeadInsertEventTap, kCGEventTapOptionDefault, mask, tap_callback, NULL);
     if (!g_tap) return false;
     g_tap_source = CFMachPortCreateRunLoopSource(NULL, g_tap, 0);
@@ -366,3 +375,4 @@ bool is_ds_tap_installed(void) { return g_tap != NULL; }
 void is_ds_set_intercept(bool enabled) { g_intercept = enabled; if (!enabled) { g_tracking = false; g_fired = false; } }
 void is_ds_set_swipe_handler(ISSwipeHandler handler) { g_handler = handler; }
 void is_ds_set_key_handler(ISKeyHandler handler) { g_key_handler = handler; }
+void is_ds_set_mouse_handler(ISMouseHandler handler) { g_mouse_handler = handler; }

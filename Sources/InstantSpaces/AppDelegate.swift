@@ -12,6 +12,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Target of our own switch, shown once the Dock has actually landed there.
     private var pendingIndicator: SpaceSnapshot?
     private var pendingFallback: DispatchWorkItem?
+    private lazy var dockClicks = DockClickInterceptor(switcher: switcher)
+    /// App activated with ⌘Tab whose space we jumped to; it must end up frontmost there.
+    private var pendingFocus: (app: NSRunningApplication, target: Int)?
     private var signalSources: [DispatchSourceSignal] = []
     private var permissionTimer: Timer?
 
@@ -29,6 +32,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         is_ds_set_key_handler { keycode, flags, isRepeat in
             AppDelegate.current?.handleKey(keycode: keycode, flags: flags, isRepeat: isRepeat) ?? false
+        }
+        is_ds_set_mouse_handler { down, x, y, flags in
+            AppDelegate.current?.dockClicks.handle(down: down, location: CGPoint(x: x, y: y), flags: flags) ?? false
         }
         is_ds_set_intercept(Settings.shared.enabled)
 
@@ -75,7 +81,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard let target = indexes.first, !indexes.contains(state.current) else { return }
 
         let name = app.localizedName ?? "pid \(app.processIdentifier)"
-        switcher.jump(toSpaceIndex: target, reason: "app \(name)")
+        guard switcher.jump(toSpaceIndex: target, reason: "app \(name)") else { return }
+        pendingFocus = (app, target)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in self?.completeFocus() }
+    }
+
+    /// Landing on a space makes macOS activate the app with the topmost window there, which may
+    /// not be the app the user picked with ⌘Tab. Give focus back to the picked app.
+    private func completeFocus() {
+        guard let focus = pendingFocus else { return }
+        pendingFocus = nil
+        let pid = focus.app.processIdentifier
+        guard NSWorkspace.shared.frontmostApplication?.processIdentifier != pid, !focus.app.isTerminated else { return }
+        let element = AXUIElementCreateApplication(pid)
+        let result = AXUIElementSetAttributeValue(element, kAXFrontmostAttribute as CFString, kCFBooleanTrue)
+        log.info("refocused \(focus.app.localizedName ?? "pid \(pid)", privacy: .public): \(result.rawValue)")
     }
 
     // MARK: Indicator
@@ -99,6 +119,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func activeSpaceDidChange() {
         guard let landed = switcher.snapshot(usePrediction: false) else { return }
         log.info("active space changed to \(landed.current + 1) of \(landed.count)")
+        dockClicks.spaceDidChange(to: landed.current)
+        if let focus = pendingFocus, focus.target == landed.current {
+            // Let macOS finish its own activation for the new space first.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) { [weak self] in self?.completeFocus() }
+        }
         if let pending = pendingIndicator {
             // Intermediate hops of a multi-space jump are skipped.
             if landed.current == pending.current { showPendingIndicator() }

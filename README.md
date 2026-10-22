@@ -67,7 +67,9 @@ These shortcuts are captured globally, so apps no longer receive them. ⌘1…9 
 
 ### Following the activated app (⌘Tab, Dock)
 
-Sometimes an app becomes active while none of its windows is on the current Space. This happens with ⌘Tab, a Dock click, or opening a link. InstantSpaces then jumps instantly to the Space holding that app's most recently used window. Full-screen apps are supported. If the app already has a window on the current Space, nothing happens.
+Sometimes an app becomes active while none of its windows is on the current Space. This happens with ⌘Tab, a Dock click, or opening a link. InstantSpaces then jumps instantly to the Space holding that app's most recently used window, and makes sure the app you picked gets focus there rather than another app on the same Space. Full-screen apps are supported. If the app already has a window on the current Space, nothing happens.
+
+Dock clicks are handled before the Dock acts on them. When you click the icon of a running app whose windows are all on another Space, InstantSpaces holds the click back, jumps to that Space instantly and then passes the click on to the Dock. The Dock then just activates the app, so there is no delay and no slide. Clicks with ⌘, ⌃, ⌥ or ⇧ held, clicks on apps that are not running, and clicks on apps with a window on the current Space reach the Dock unchanged.
 
 This needs the system option from step 3 of the setup to be off. While it is on, the Dock performs its own animated switch. InstantSpaces then stays out of the way so the two switches do not collide, and its menu shows a warning.
 

@@ -46,6 +46,15 @@ bool is_ds_tap_installed(void);
 void is_ds_set_intercept(bool enabled);
 void is_ds_set_swipe_handler(ISSwipeHandler handler);
 
+/// Marker stored in kCGEventSourceUserData of the mouse events InstantSpaces replays, so its own
+/// event tap lets them through.
+#define IS_REPLAY_MARKER 0x49535250
+
+/// Called from the event tap for every left mouse-down (`down` = true) and mouse-up, in global
+/// top-left screen coordinates. Return true to swallow the event. Replayed events are not reported.
+typedef bool (*ISMouseHandler)(bool down, double x, double y, uint64_t flags);
+void is_ds_set_mouse_handler(ISMouseHandler handler);
+
 /// Called from the event tap for every key-down. Return true to swallow the key (its key-up is
 /// swallowed too). `flags` are CGEventFlags; `is_repeat` is set for auto-repeat key-downs.
 typedef bool (*ISKeyHandler)(int32_t keycode, uint64_t flags, bool is_repeat);
